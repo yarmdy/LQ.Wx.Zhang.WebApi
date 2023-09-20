@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 
 using System.Text;
 
-namespace AiBi.Test.Common
+namespace LQ.Wx.Zhang.Common
 {
     /// <summary>
     /// 加密解密帮助类

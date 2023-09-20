@@ -9,7 +9,7 @@
 //using System.Collections.Generic;
 //using System.Linq;
 
-namespace AiBi.Test.Common
+namespace LQ.Wx.Zhang.Common
 {
     /// <summary>
     /// Excel 编辑器

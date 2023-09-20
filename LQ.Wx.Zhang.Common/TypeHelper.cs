@@ -12,7 +12,7 @@ using System.Text;
 using System.Web;
 using System.Collections;
 
-namespace AiBi.Test.Common
+namespace LQ.Wx.Zhang.Common
 {
     /// <summary>
     /// 反射帮助类

@@ -4,7 +4,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-namespace AiBi.Test.Common
+namespace LQ.Wx.Zhang.Common
 {
     public static class PredicateBuilder
     {

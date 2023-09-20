@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LQ.Wx.Zhang.BLL\LQ.Wx.Zhang.BLL.csproj" />
+    <ProjectReference Include="..\LQ.Wx.Zhang.Common\LQ.Wx.Zhang.Common.csproj" />
     <ProjectReference Include="..\LQ.Wx.Zhang.DAL\LQ.Wx.Zhang.DAL.csproj" />
   </ItemGroup>
 

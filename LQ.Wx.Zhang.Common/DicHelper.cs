@@ -12,7 +12,7 @@ using System.Text;
 using System.Web;
 using System.Collections;
 
-namespace AiBi.Test.Common
+namespace LQ.Wx.Zhang.Common
 {
     /// <summary>
     /// 字典帮助对象
@@ -31,13 +31,28 @@ namespace AiBi.Test.Common
             return key!=null && dic.ContainsKey(key) ? dic[key]:def;
         }
 
-        public static TValue? G<TValue>(this IDictionary dic, object key, TValue? def = default) {
-            if (key==null || !dic.Contains(key))
+        public static TValue? G<TValue>(this IDictionary dic, object key, TValue? def = default)
+        {
+            if (key == null || !dic.Contains(key))
             {
                 return def;
             }
             var val = dic[key];
-            if(val is TValue)
+            if (val is TValue)
+            {
+                return (TValue)val;
+            }
+            return def;
+        }
+
+        public static TValue? G<TValue>(this IDictionary<object,object> dic, object key, TValue? def = default)
+        {
+            if (key == null || !dic.ContainsKey(key))
+            {
+                return def;
+            }
+            var val = dic[key];
+            if (val is TValue)
             {
                 return (TValue)val;
             }

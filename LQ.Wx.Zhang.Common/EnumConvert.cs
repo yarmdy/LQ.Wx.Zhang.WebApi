@@ -15,7 +15,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 
-namespace AiBi.Test.Common
+namespace LQ.Wx.Zhang.Common
 {
     /// <summary>
     /// 枚举转换对象

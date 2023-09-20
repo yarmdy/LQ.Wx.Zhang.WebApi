@@ -12,9 +12,10 @@ using System.Text;
 using System.Web;
 using System.Collections;
 using System.Runtime.CompilerServices;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Http;
 
-namespace AiBi.Test.Common
+namespace LQ.Wx.Zhang.Common
 {
     /// <summary>
     /// http上下文缓存
@@ -57,4 +58,35 @@ namespace AiBi.Test.Common
         }
     }
 
+    public static class HttpContext
+    {
+        public static IServiceProvider? ServiceProvider { get; set; }
+        public static Microsoft.AspNetCore.Http.HttpContext? Current { get
+            {
+                if (ServiceProvider == null)
+                {
+                    return null;
+                }
+                return ServiceProvider.GetService<IHttpContextAccessor>()?.HttpContext;
+            } 
+        }
+        public static IServiceCollection AddHttpContextHelper(this IServiceCollection services)
+        {
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            return services;
+        }
+        public static T GetService<T>() 
+        {
+            if (ServiceProvider == null)
+            {
+                throw new InvalidOperationException();
+            }
+            var res = ServiceProvider.GetService(typeof(T));
+            if (res == null)
+            {
+                throw new InvalidOperationException();
+            }
+            return (T)res;
+        }
+    }
 }

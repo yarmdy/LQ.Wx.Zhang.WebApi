@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 
 using System.Text;
 
-namespace AiBi.Test.Common
+namespace LQ.Wx.Zhang.Common
 {
     /// <summary>
     /// 异常

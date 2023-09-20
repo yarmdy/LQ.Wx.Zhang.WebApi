@@ -15,7 +15,7 @@ using Newtonsoft.Json.Converters;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Html;
 
-namespace AiBi.Test.Common
+namespace LQ.Wx.Zhang.Common
 {
     /// <summary>
     /// 字典帮助对象

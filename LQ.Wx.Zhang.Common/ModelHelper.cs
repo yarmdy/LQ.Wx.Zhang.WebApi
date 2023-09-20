@@ -14,7 +14,7 @@ using System.Linq.Expressions;
 using System.Collections;
 using Microsoft.AspNetCore.Html;
 
-namespace AiBi.Test.Common
+namespace LQ.Wx.Zhang.Common
 {
     public static class ModelHelper
     {
