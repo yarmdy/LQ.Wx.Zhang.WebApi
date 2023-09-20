@@ -11,8 +11,8 @@ namespace LQ.Wx.Zhang.BLL
     {
         #region 属性
         public int CurrentUserId => UserBll.GetCookie()?.Id ?? 0;
-        public string CurrentUserName => UserBll.GetCookie()?.Name;
-        public string CurrentAccount => UserBll.GetCookie()?.Account;
+        public string? CurrentUserName => UserBll.GetCookie()?.Name;
+        public string? CurrentAccount => UserBll.GetCookie()?.Account;
         #endregion
         #region 依赖
         /// <summary>
@@ -83,7 +83,7 @@ namespace LQ.Wx.Zhang.BLL
         {
             return query;
         }
-        public virtual IQueryable<T> DefOrderBy(PageReqT req, IOrderedQueryable<T> query)
+        public virtual IQueryable<T> DefOrderBy(PageReqT? req, IOrderedQueryable<T> query)
         {
             if (TypeHelper.HasPropertyBase<T>("Id"))
             {
@@ -215,11 +215,11 @@ namespace LQ.Wx.Zhang.BLL
             var hasOld = false;
             if (model is IdEntity)
             {
-                if ((model as IdEntity).Id != 0)
+                if (((IdEntity)(object)model).Id != 0)
                 {
                     throw new ArgumentNullException("model.Id");
                 }
-                (model as IdEntity).Id = -1;
+                ((IdEntity)(object)model).Id = -1;
                 Context.Set<T>().Add(model);
             }
             else
@@ -386,7 +386,7 @@ namespace LQ.Wx.Zhang.BLL
         public Response<T, object, object, object> EditProperties(int id, int? id2, EditPartsReq req)
         {
             var res = new Response<T, object, object, object>();
-            if ((req?.Properties?.Count ?? 0) <= 0)
+            if ((req?.Properties?.Count ?? 0) <= 0 || req?.Properties==null)
             {
                 res.code = EnumResStatus.Fail;
                 res.msg = "未传入要修改的数据";
@@ -411,6 +411,10 @@ namespace LQ.Wx.Zhang.BLL
 
             existsProperties.ForEach(a => {
                 var prop = TypeHelper.GetPropertyBase<T>(a.Key);
+                if (prop == null)
+                {
+                    throw new Exception($"未找到属性{a.Key}");
+                }
                 model.SetPropertyValue(a.Key, Convert.ChangeType(a.Value, prop.PropertyType));
             });
             var ret = Context.SaveChanges();
@@ -446,7 +450,11 @@ namespace LQ.Wx.Zhang.BLL
             }
             var names = getKeyNames();
             var models = ids.Select(a => {
-                var model = (T)Activator.CreateInstance(typeof(T));
+                var model = (T?)Activator.CreateInstance(typeof(T));
+                if (model == null)
+                {
+                    throw new Exception($"无法创建{typeof(T).Name}的对象");
+                }
                 var i = 0;
                 names.ToList().ForEach(b => TypeHelper.SetPropertyValue(model, b, a[i++]));
                 return model;
@@ -475,7 +483,7 @@ namespace LQ.Wx.Zhang.BLL
         #endregion
 
         #region lambda查询
-        private IQueryable<T> getListQuery(Func<IQueryable<T>, IQueryable<T>> where, bool notracking)
+        private IQueryable<T> getListQuery(Func<IQueryable<T>, IQueryable<T>>? where, bool notracking)
         {
             IQueryable<T> query;
             if (notracking)
@@ -506,7 +514,7 @@ namespace LQ.Wx.Zhang.BLL
             return query;
         }
 
-        public List<T> GetListPage(out int count, int page, int size, Func<IQueryable<T>, IQueryable<T>> where = null, Func<IQueryable<T>, IQueryable<T>> order = null, bool notracking = false)
+        public List<T> GetListPage(out int count, int page, int size, Func<IQueryable<T>, IQueryable<T>>? where = null, Func<IQueryable<T>, IQueryable<T>>? order = null, bool notracking = false)
         {
             var query = getListQuery(where, notracking);
 
@@ -529,7 +537,7 @@ namespace LQ.Wx.Zhang.BLL
         {
             return GetListFilter(where, null, true);
         }
-        public List<T> GetListFilter(Func<IQueryable<T>, IQueryable<T>> where, Func<IQueryable<T>, IQueryable<T>> order, bool notracking)
+        public List<T> GetListFilter(Func<IQueryable<T>, IQueryable<T>> where, Func<IQueryable<T>, IQueryable<T>>? order, bool notracking)
         {
             var query = getListQuery(where, notracking);
 
@@ -543,11 +551,11 @@ namespace LQ.Wx.Zhang.BLL
             }
             return query.ToList();
         }
-        public T GetFirstOrDefault(Func<IQueryable<T>, IQueryable<T>> where, bool notracking = true)
+        public T? GetFirstOrDefault(Func<IQueryable<T>, IQueryable<T>> where, bool notracking = true)
         {
             return GetFirstOrDefault(where, null, notracking);
         }
-        public T GetFirstOrDefault(Func<IQueryable<T>, IQueryable<T>> where, Func<IQueryable<T>, IQueryable<T>> order, bool notracking)
+        public T? GetFirstOrDefault(Func<IQueryable<T>, IQueryable<T>>? where, Func<IQueryable<T>, IQueryable<T>>? order, bool notracking)
         {
             var query = getListQuery(where, notracking);
 
@@ -561,11 +569,11 @@ namespace LQ.Wx.Zhang.BLL
             }
             return query.FirstOrDefault();
         }
-        public List<T> ByIds(int[] Ids, Expression<Func<T, int>> expr = null)
+        public List<T> ByIds(int[] Ids, Expression<Func<T, int>>? expr = null)
         {
             return ByIds(true, Ids, expr);
         }
-        public List<T> ByIds(bool notracking, int[] Ids, Expression<Func<T, int>> expr)
+        public List<T> ByIds(bool notracking, int[] Ids, Expression<Func<T, int>>? expr)
         {
             if (!typeof(T).IsSubclassOf(typeof(IdEntity)) && expr == null || Ids == null || Ids.Length <= 0)
             {
@@ -578,11 +586,11 @@ namespace LQ.Wx.Zhang.BLL
             var where = PredicateBuilder.DotExpression<T, int>("Id").In(Ids);
             return GetListFilter(a => a.Where(where), a => a.OrderByDescending(b => b.CreateTime), notracking);
         }
-        public T Find(params object[] keys)
+        public T? Find(params object[] keys)
         {
             return Find(true, keys);
         }
-        public T Find(bool notracking, params object[] keys)
+        public T? Find(bool notracking, params object?[]? keys)
         {
             if (keys == null) return null;
             keys = keys.Where(a => a != null).ToArray();
@@ -616,7 +624,7 @@ namespace LQ.Wx.Zhang.BLL
             }
             return obj;
         }
-        private object[] convertKeyType(params object[] keys)
+        private object[] convertKeyType(params object?[] keys)
         {
             var objset = (Context as IObjectContextAdapter).ObjectContext.CreateObjectSet<T>();
             int i = 0;
@@ -634,7 +642,7 @@ namespace LQ.Wx.Zhang.BLL
             var stt = (Context as IObjectContextAdapter).ObjectContext.CreateObjectSet<T>();
             return stt.EntitySet.ElementType.KeyProperties.Select(a => a.Name).ToArray();
         }
-        private Dictionary<string, object> getKeyValues(T model)
+        private Dictionary<string, object?> getKeyValues(T model)
         {
             var names = getKeyNames();
             if (names.Length <= 0)
@@ -677,7 +685,7 @@ namespace LQ.Wx.Zhang.BLL
         /// </summary>
         /// <param name="expr"></param>
         /// <returns></returns>
-        private static string getMembersPath(Expression expr)
+        private static string? getMembersPath(Expression expr)
         {
             if (!(expr is MemberExpression)) return null;
             var exprList = new List<Expression> { expr };
@@ -688,8 +696,12 @@ namespace LQ.Wx.Zhang.BLL
                 exprList.RemoveAt(exprList.Count - 1);
                 if (last is MemberExpression)
                 {
-                    var memExpr = (last as MemberExpression);
+                    var memExpr = ((MemberExpression)last);
                     path = "." + memExpr.Member.Name + path;
+                    if (memExpr.Expression == null)
+                    {
+                        throw new Exception("属性表达式未找到子表达式");
+                    }
                     exprList.Add(memExpr.Expression);
                 }
                 else

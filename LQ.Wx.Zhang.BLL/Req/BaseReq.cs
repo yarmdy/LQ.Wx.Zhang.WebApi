@@ -17,7 +17,7 @@ namespace LQ.Wx.Zhang.BLL
         public Dictionary<string, string>? Where { get; set; }
         public Dictionary<string,bool>? Sort { get; set; }
 
-        public object Tag { get; set; }
+        public object? Tag { get; set; }
     }
     public class EditPartsReq : BaseReq
     {

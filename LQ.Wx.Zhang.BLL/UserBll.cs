@@ -6,7 +6,7 @@ namespace LQ.Wx.Zhang.BLL
     public class UserBll : BaseBll<User,UserReq.Page>
     {
         #region 当前状态
-        public static User GetCookie()
+        public static User? GetCookie()
         {
             var arr = (HttpContext.Current?.User?.Identity?.Name + "").Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
             if (arr == null || arr.Length < 3)
@@ -15,7 +15,7 @@ namespace LQ.Wx.Zhang.BLL
             }
             return new User { Id = Convert.ToInt32(arr[0]), Account = arr[1], Name = arr[2] };
         }
-        public static User CurrentUser
+        public static User? CurrentUser
         {
             get
             {
