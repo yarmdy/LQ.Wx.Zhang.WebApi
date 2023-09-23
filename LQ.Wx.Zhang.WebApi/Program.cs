@@ -15,7 +15,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextHelper();
 
 var app = builder.Build();
-LQ.Wx.Zhang.Common.HttpContext.ServiceProvider = app.Services;
+LQ.Wx.Zhang.Common.HttpContext.ServiceProvider = builder.Services.BuildServiceProvider();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

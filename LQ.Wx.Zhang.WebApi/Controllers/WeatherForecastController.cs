@@ -1,4 +1,5 @@
 using LQ.Wx.Zhang.BLL;
+using LQ.Wx.Zhang.DAL;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LQ.Wx.Zhang.WebApi.Controllers
@@ -24,7 +25,7 @@ namespace LQ.Wx.Zhang.WebApi.Controllers
         [HttpGet(Name = "GetWeatherForecast")]
         public IEnumerable<WeatherForecast> Get()
         {
-            var asd = Common.HttpContext.Current;
+            ItemBll.Delete(new int[][] { new[] { 1} });
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
                 Date = DateTime.Now.AddDays(index),

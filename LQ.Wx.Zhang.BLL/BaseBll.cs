@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace LQ.Wx.Zhang.BLL
 {
@@ -19,6 +20,9 @@ namespace LQ.Wx.Zhang.BLL
         /// 上下文
         /// </summary>
         public ZhangDb Context { get; set; }
+        public BaseBll() { 
+            Context = HttpContext.ServiceProvider!.GetService<ZhangDb>()!;
+        }
 
         public EnumDeleteFilterMode DelFilterMode { get; set; } = EnumDeleteFilterMode.Normal;
         #endregion
@@ -232,9 +236,9 @@ namespace LQ.Wx.Zhang.BLL
                 if (tmp != null)
                 {
                     hasOld = true;
-                    Context.Configuration.LazyLoadingEnabled = false;
+                    //Context.Configuration.LazyLoadingEnabled = false;
                     tmp.CopyFrom(model, a => new { a.CreateTime, a.CreateUserId }, new[] { typeof(BaseEntity), typeof(ICollection<>) });
-                    Context.Configuration.LazyLoadingEnabled = true;
+                    //Context.Configuration.LazyLoadingEnabled = true;
                     model = tmp;
                 }
                 else
@@ -316,9 +320,9 @@ namespace LQ.Wx.Zhang.BLL
                 res.msg = "找不到要修改的数据";
                 return res;
             }
-            Context.Configuration.LazyLoadingEnabled = false;
+            //Context.Configuration.LazyLoadingEnabled = false;
             tmp.CopyFrom(model, a => new { a.CreateTime, a.CreateUserId }, new[] { typeof(BaseEntity), typeof(ICollection<>) });
-            Context.Configuration.LazyLoadingEnabled = true;
+            //Context.Configuration.LazyLoadingEnabled = true;
             model = tmp;
 
             model.ModifyTime = DateTime.Now;
@@ -626,21 +630,23 @@ namespace LQ.Wx.Zhang.BLL
         }
         private object[] convertKeyType(params object?[] keys)
         {
-            var objset = (Context as IObjectContextAdapter).ObjectContext.CreateObjectSet<T>();
+            var objset = Context.Model.FindEntityType(typeof(T));
+            //var objset = (Context as IObjectContextAdapter).ObjectContext.CreateObjectSet<T>();
             int i = 0;
-            var keyTypes = objset.EntitySet.ElementType.KeyProperties.Select(a => {
-                var type = TypeHelper.GetPropertyBase<T>(a.Name).PropertyType;
+            var keyTypes = objset!.GetKeys().Where(a => a.IsPrimaryKey()).Select(a => {
+                var type = a.GetKeyType();
                 var res = Convert.ChangeType(keys[i], type, null);
                 i++;
                 return res;
             }).ToArray();
-            return keyTypes;
+            return keyTypes!;
         }
 
         private string[] getKeyNames()
         {
-            var stt = (Context as IObjectContextAdapter).ObjectContext.CreateObjectSet<T>();
-            return stt.EntitySet.ElementType.KeyProperties.Select(a => a.Name).ToArray();
+            //var stt = (Context as IObjectContextAdapter).ObjectContext.CreateObjectSet<T>();
+            var stt = Context.Model.FindEntityType(typeof(T));
+            return stt!.GetKeys().Where(a=>a.IsPrimaryKey()).Select(a => a.Properties.First().Name).ToArray()!;
         }
         private Dictionary<string, object?> getKeyValues(T model)
         {

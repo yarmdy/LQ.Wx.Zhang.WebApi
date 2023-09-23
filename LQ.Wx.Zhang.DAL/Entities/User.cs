@@ -8,7 +8,7 @@ namespace LQ.Wx.Zhang.DAL
 {
     public class User : IdEntity
     {
-        public string Name { get; set; }
-        public string Account { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Account { get; set; } = string.Empty;
     }
 }

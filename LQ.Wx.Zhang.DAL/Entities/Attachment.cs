@@ -9,19 +9,12 @@ namespace LQ.Wx.Zhang.DAL
 {
     public class Attachment : IdEntity
     {
-        public Attachment(string name,string path,string ext,string fileName) { 
-            Name = name;
-            Path = path;
-            Ext = ext;
-            FileName = fileName;
-            Items = new List<Item>();
-        }
-        public string Name { get; set; }
-        public string Path { get; set; }
-        public string Ext { get; set; }
-        public string FileName { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Path { get; set; } = string.Empty;
+        public string Ext { get; set; } = string.Empty;
+        public string FileName { get; set; } = string.Empty;
         public int ModuleType { get; set; }
-        public List<Item> Items { get; set; }
+        public virtual ICollection<Item>? Items { get; set; }
         [NotMapped]
         public string FullName => Name + Path + Ext;
     }
