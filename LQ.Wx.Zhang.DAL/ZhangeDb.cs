@@ -24,18 +24,19 @@ namespace LQ.Wx.Zhang.DAL
         {
             modelBuilder.Entity<Attachment>(a =>
             {
-                a.HasOne(b=>b.CreateUser).WithMany().HasForeignKey(b=>b.CreateUserId);
+                a.HasOne(b=>b.CreateUser).WithMany().HasForeignKey(b=>b.CreateUserId).IsRequired();
                 a.HasOne(b=>b.ModifyUser).WithMany().HasForeignKey(b=>b.ModifyUserId);
                 a.HasOne(b=>b.DelUser).WithMany().HasForeignKey(b=>b.DelUserId);
             });
-            modelBuilder.Entity<Item>(a => { 
+            modelBuilder.Entity<Item>(a => {
                 a.HasOne(b => b.Image).WithMany(b=>b.Items).IsRequired(false).HasForeignKey(b=>b.ImageId);
-                a.HasOne(b => b.CreateUser).WithMany().HasForeignKey(b => b.CreateUserId);
+                a.HasOne(b => b.CreateUser).WithMany().HasForeignKey(b => b.CreateUserId).IsRequired();
                 a.HasOne(b => b.ModifyUser).WithMany().HasForeignKey(b => b.ModifyUserId);
                 a.HasOne(b => b.DelUser).WithMany().HasForeignKey(b => b.DelUserId);
             });
             modelBuilder.Entity<User>(a => {
-                a.HasOne(b => b.CreateUser).WithMany().HasForeignKey(b => b.CreateUserId);
+                a.Property(a=>a.CreateUserId).IsRequired(false);
+                a.HasOne(b => b.CreateUser).WithMany().HasForeignKey(b => b.CreateUserId).IsRequired(false);
                 a.HasOne(b => b.ModifyUser).WithMany().HasForeignKey(b => b.ModifyUserId);
                 a.HasOne(b => b.DelUser).WithMany().HasForeignKey(b => b.DelUserId);
             });

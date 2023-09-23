@@ -2,6 +2,9 @@
 
 using LQ.Wx.Zhang.BLL;
 using LQ.Wx.Zhang.Common;
+using LQ.Wx.Zhang.WebApi;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,9 +16,21 @@ builder.Services.AddBll();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextHelper();
+//builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddAuthentication("sa").AddCookie("sa"
+    , option => {
+        builder.Configuration.Bind("CookieSettings", option);
+        option.Cookie.Name = "sa";
+        option.Cookie.Path = "/";
+        //option.Cookie.Domain = "localhost";
+        option.Cookie.HttpOnly = true;
+        option.Cookie.SameSite = SameSiteMode.None;
+    });
+builder.Services.AddSingleton<IConfigureOptions<CookieAuthenticationOptions>,CustomCookieAuthenticationOptions>();
 
 var app = builder.Build();
-LQ.Wx.Zhang.Common.HttpContext.ServiceProvider = builder.Services.BuildServiceProvider();
+LQ.Wx.Zhang.Common.HttpContext.ServiceProvider = app.Services;
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -23,6 +38,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseExceptionHandler(a => { 
+    
+});
 app.UseHttpsRedirection();
 
 app.UseAuthorization();

@@ -21,7 +21,7 @@ namespace LQ.Wx.Zhang.BLL
         /// </summary>
         public ZhangDb Context { get; set; }
         public BaseBll() { 
-            Context = HttpContext.ServiceProvider!.GetService<ZhangDb>()!;
+            Context = HttpContext.Current!.RequestServices!.GetService<ZhangDb>()!;
         }
 
         public EnumDeleteFilterMode DelFilterMode { get; set; } = EnumDeleteFilterMode.Normal;
@@ -223,7 +223,7 @@ namespace LQ.Wx.Zhang.BLL
                 {
                     throw new ArgumentNullException("model.Id");
                 }
-                ((IdEntity)(object)model).Id = -1;
+                ((IdEntity)(object)model).Id = 0;
                 Context.Set<T>().Add(model);
             }
             else
