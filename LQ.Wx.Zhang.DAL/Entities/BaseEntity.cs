@@ -17,9 +17,9 @@ namespace LQ.Wx.Zhang.DAL
         public int? DelUserId { get; set; }
         public DateTime? DelTime { get; set; }
 
-        public User? CreateUser { get; set; }
-        public User? ModifyUser { get; set; }
-        public User? DelUser { get; set; }
+        public virtual User? CreateUser { get; set; }
+        public virtual User? ModifyUser { get; set; }
+        public virtual User? DelUser { get; set; }
 
         [NotMapped]
         public object? ObjectTag { get; set; }
