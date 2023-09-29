@@ -36,14 +36,16 @@ namespace LQ.Wx.Zhang.WebApi.Controllers
             return Login();
         }
         [AllowAnonymous]
-        [HttpPost("Login2")]
+        [HttpPost("GetCookie")]
         public async Task<object> Login3(string userName, string password)
         {
             var claims = new List<Claim>() {
                 new Claim("UserName", userName),
                 new Claim("Password", password)
             };
-            await HttpContext.SignInAsync(new ClaimsPrincipal(new ClaimsIdentity(claims, "cookie", "user", "role")));
+            await HttpContext.SignInAsync(new ClaimsPrincipal(new ClaimsIdentity(claims, "cookie", "UserName", "role")));
+
+            
             return new { userName, password };
         }
     }
