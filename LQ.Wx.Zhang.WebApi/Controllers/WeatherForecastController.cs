@@ -7,10 +7,10 @@ namespace LQ.Wx.Zhang.WebApi.Controllers
 {
     [ApiController,Authorize]
     [Route("[controller]")]
-    public class WeatherForecastController : ControllerBase
+    public class WeatherForecastController : BaseController<Item,ItemReq.Page>
     {
-        public ItemBll ItemBll { get; set; }
-        public UserBll UserBll { get; set; }
+        public ItemBll CoreBll { get; set; } = default!;
+        public override BaseBll<Item, ItemReq.Page> Bll => CoreBll;
         private static readonly string[] Summaries = new[]
         {
         "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
@@ -21,8 +21,6 @@ namespace LQ.Wx.Zhang.WebApi.Controllers
         public WeatherForecastController(ILogger<WeatherForecastController> logger):base()
         {
             _logger = logger;
-            ItemBll = Common.HttpContext.Current.RequestServices.GetService<ItemBll>();
-            UserBll = Common.HttpContext.Current.RequestServices.GetService<UserBll>();
         }
 
         [HttpGet(Name = "GetWeatherForecast")]

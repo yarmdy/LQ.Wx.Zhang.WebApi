@@ -12,8 +12,8 @@ using System.Text;
 using System.Web;
 using System.Collections;
 using System.Runtime.CompilerServices;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LQ.Wx.Zhang.Common
 {
@@ -57,25 +57,26 @@ namespace LQ.Wx.Zhang.Common
             return context.Items.G<TValue>(key);
         }
     }
-
     public static class HttpContext
     {
         public static IServiceProvider? ServiceProvider { get; set; }
-        public static Microsoft.AspNetCore.Http.HttpContext? Current { get
+        public static Microsoft.AspNetCore.Http.HttpContext? Current
+        {
+            get
             {
                 if (ServiceProvider == null)
                 {
                     return null;
                 }
                 return ServiceProvider.GetService<IHttpContextAccessor>()?.HttpContext;
-            } 
+            }
         }
         public static IServiceCollection AddHttpContextHelper(this IServiceCollection services)
         {
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             return services;
         }
-        public static T GetService<T>() 
+        public static T GetService<T>()
         {
             if (ServiceProvider == null)
             {

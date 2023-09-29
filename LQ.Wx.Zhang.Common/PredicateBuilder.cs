@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -24,22 +25,22 @@ namespace LQ.Wx.Zhang.Common
             return Expression.Lambda<Func<T, bool>>(Expression.AndAlso(expr1.Body, right), expr1.Parameters);
         }
 
-        public static Expression<Func<T, bool>> Equal<T>(this LambdaExpression expr,object val) {
+        public static Expression<Func<T, bool>> Equal<T>(this LambdaExpression expr,object? val) {
             return Expression.Lambda<Func<T, bool>>(Expression.Equal(expr.Body,Expression.Constant(val)),expr.Parameters);
+        }
+        public static Expression<Func<T, bool>> Equal<T>(this LambdaExpression expr, object? val,Type type)
+        {
+            return Expression.Lambda<Func<T, bool>>(Expression.Equal(expr.Body, Expression.Constant(val, type)), expr.Parameters);
         }
 
         public static Expression<Func<T, bool>> In<T, TType>(this Expression<Func<T, TType>> expr, TType[] vals)
         {
-            var method = typeof(System.Linq.Enumerable).GetMethods().Where(a => a.Name == "Contains" && a.GetParameters().Length == 2).First().MakeGenericMethod(typeof(TType));
+            var method = typeof(System.Linq.Enumerable).GetMethods().Where(a => a.Name == "Contains" && a.GetParameters().Length == 2).FirstOrDefault()!.MakeGenericMethod(typeof(TType));
             return Expression.Lambda<Func<T, bool>>(Expression.Call(null, method, Expression.Constant(vals), expr.Body),expr.Parameters);
         }
         public static Expression<Func<T, bool>> Like<T>(this Expression<Func<T, string>> expr, string val)
         {
-            var method = typeof(string).GetMethod("Contains");
-            if (method == null)
-            {
-                throw new Exception("方法Contains未找到");
-            }
+            var method = typeof(string).GetMethod("Contains")!;
             return Expression.Lambda<Func<T, bool>>(Expression.Call(expr.Body, method, Expression.Constant(val)), expr.Parameters);
         }
 
@@ -59,11 +60,7 @@ namespace LQ.Wx.Zhang.Common
             Type type = typeof(T);
             foreach (var param in arr)
             {
-                var member = TypeHelper.GetPropertyBase(type, param);
-                if (member == null)
-                {
-                    throw new Exception($"成员{param}未找到");
-                }
+                var member = TypeHelper.GetPropertyBase(type, param)!;
                 expr = Expression.MakeMemberAccess(expr, member);
                 type = member.PropertyType;
             }
@@ -81,12 +78,8 @@ namespace LQ.Wx.Zhang.Common
             {
                 return query;
             }
-            var tprop = TypeHelper.GetProperty<T>(property)?.PropertyType;
-            if (tprop == null)
-            {
-                return query;
-            }
-            var isnullable = (tprop.FullName??"").StartsWith("System.Nullable");
+            var tprop = TypeHelper.GetProperty<T>(property)!.PropertyType;
+            var isnullable = tprop.FullName!.StartsWith("System.Nullable");
             var prop = isnullable ? tprop.GenericTypeArguments?[0] : tprop;
             if (prop == null)
             {
@@ -145,20 +138,32 @@ namespace LQ.Wx.Zhang.Common
             
             return query;
         }
-        public static IQueryable<T> EqualTo<T>(this IQueryable<T> query,string property,object value) {
+        public static IQueryable<T> EqualTo<T>(this IQueryable<T> query,string property,object? value) {
             if (!TypeHelper.HasProperty<T>(property))
             {
                 return query;
             }
-            var tprop = TypeHelper.GetProperty<T>(property)?.PropertyType;
-            if(tprop == null)
+            var tprop = TypeHelper.GetProperty<T>(property)!.PropertyType;
+            if (tprop.IsGenericType && tprop.GetGenericTypeDefinition() == typeof(Nullable<>))
             {
-                return query;
+                var ttprop = tprop.GenericTypeArguments[0];
+                if (value + "" == "")
+                {
+                    value = Activator.CreateInstance(tprop);
+                }
+                else
+                {
+                    var tmpval = Convert.ChangeType(value, ttprop, null);
+                    value = tmpval; 
+                }
+                
             }
-            value = Convert.ChangeType(value,tprop,null);
+            else
+            {
+                value = Convert.ChangeType(value, tprop, null);
+            }
 
-
-            return query.Where(DotExpressionBase<T>(property).Equal<T>(value));
+            return query.Where(DotExpressionBase<T>(property).Equal<T>(value, tprop));
         }
         public static IOrderedQueryable<T> ThenByDescending<T>(this IOrderedQueryable<T> query, string property, bool asc = false)
         {
@@ -170,12 +175,8 @@ namespace LQ.Wx.Zhang.Common
             {
                 return query;
             }
-            var tprop = TypeHelper.GetProperty<T>(property)?.PropertyType;
-            if(tprop == null)
-            {
-                return query;
-            }
-            var isnullable = (tprop.FullName+"").StartsWith("System.Nullable");
+            var tprop = TypeHelper.GetProperty<T>(property)!.PropertyType;
+            var isnullable = tprop.FullName!.StartsWith("System.Nullable");
             var prop = isnullable ? tprop.GenericTypeArguments?[0] : tprop;
             if (prop == null)
             {
@@ -235,6 +236,25 @@ namespace LQ.Wx.Zhang.Common
             return query;
         }
 
+        public static PropertyInfo[] GetProperties<T,TResult>(this Expression<Func<T, TResult>> expr) {
+            if (expr == null)
+            {
+                return new PropertyInfo[0];
+            }
+            if (expr.Body.NodeType != ExpressionType.New && expr.Body.NodeType != ExpressionType.MemberAccess)
+            {
+                return new PropertyInfo[0];
+            }
+            if (expr.Body.NodeType == ExpressionType.MemberAccess)
+            {
+                if(!((expr.Body as MemberExpression)!.Member is PropertyInfo)) { 
+                    return new PropertyInfo[0];
+                }
+                return new[] { ((expr.Body as MemberExpression)!.Member as PropertyInfo)! };
+            }
+            return ((NewExpression)expr.Body).Arguments.Where(a => a.NodeType == ExpressionType.MemberAccess && (a as MemberExpression)!.Member is PropertyInfo).Select(a => ((a as MemberExpression)!.Member as PropertyInfo)).ToArray()!;
+        }
+
         private class ExParameterVisitor : ExpressionVisitor
         {
             private readonly ParameterExpression _oldParameter;
@@ -256,6 +276,31 @@ namespace LQ.Wx.Zhang.Common
 
                 return base.VisitParameter(node);
             }
+        }
+
+        private static object getNullableValue(Type type,object value)
+        {
+            switch (type.Name)
+            {
+                
+                case "Int32":
+                    {
+                        return (int?)value;
+                    }
+                case "DateTime":
+                    {
+                        return (DateTime?)value;
+                    }
+                case "Decimal":
+                    {
+                        return (decimal?)value;
+                    }
+                case "Boolean":
+                    {
+                        return (bool?)value;
+                    }
+            }
+            return value;
         }
     }
 }

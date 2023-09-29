@@ -100,13 +100,63 @@ namespace LQ.Wx.Zhang.Common
 
             return strResult;
         }
+        public static byte[]? AesEncrypt(byte[] strData, string? key = null, string? iv = null) {
+            try
+            {
+                if (key == null)
+                {
+                    key = aesKey;
+                }
+                if (iv == null)
+                {
+                    iv = aesIV;
+                }
+                strData = new Random().Next(0,9999).ToString().PadLeft(4, '0').Select(a=>(byte)a).Concat(strData).ToArray();
+                var keyData = Encoding.ASCII.GetBytes(key);
+                var ivData = Encoding.ASCII.GetBytes(iv);
 
+                byte[]? res = null;
+
+                if (keyData.Length != 16)
+                {
+                    keyData = keyData.Take(16).ToArray();
+                    keyData = keyData.Concat(new byte[16 - keyData.Length]).ToArray();
+                }
+                if (ivData.Length != 16)
+                {
+                    ivData = ivData.Take(16).ToArray();
+                    ivData = ivData.Concat(new byte[16 - ivData.Length]).ToArray();
+                }
+                //using (var aesProvider = new AesCryptoServiceProvider { Key = keyData, IV = ivData, KeySize = 128, BlockSize = 128, Mode = CipherMode.CBC, Padding = PaddingMode.PKCS7 })
+                using (var aesProvider = Aes.Create())
+                {
+                    aesProvider.Key = keyData; aesProvider.IV = ivData; aesProvider.KeySize = 128; aesProvider.BlockSize = 128; aesProvider.Mode = CipherMode.CBC; aesProvider.Padding = PaddingMode.PKCS7;
+                    using (var trans = aesProvider.CreateEncryptor(keyData, ivData))
+                    {
+                        res = trans.TransformFinalBlock(strData, 0, strData.Length);
+                    }
+                }
+                return res;
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+        }
         public static string? AesEncrypt(string str, string? key = null, string? iv = null)
+        {
+            var strData = Encoding.UTF8.GetBytes(str);
+            var data = AesEncrypt(strData, key, iv);
+            if (data == null)
+            {
+                return null;
+            }
+            return Convert.ToBase64String(data);
+        }
+        public static byte[]? AesDecrypt(byte[] strData, string? key = null, string? iv = null)
         {
             try
             {
-                var strData = Encoding.UTF8.GetBytes(str);
-
                 if (key == null)
                 {
                     key = aesKey;
@@ -133,13 +183,13 @@ namespace LQ.Wx.Zhang.Common
                 //using (var aesProvider = new AesCryptoServiceProvider { Key = keyData, IV = ivData, KeySize = 128, BlockSize = 128, Mode = CipherMode.CBC, Padding = PaddingMode.PKCS7 })
                 using (var aesProvider = Aes.Create())
                 {
-                    aesProvider.Key=keyData; aesProvider.IV=ivData;aesProvider.KeySize = 128;aesProvider.BlockSize = 128;aesProvider.Mode = CipherMode.CBC;aesProvider.Padding = PaddingMode.PKCS7;
-                    using (var trans = aesProvider.CreateEncryptor(keyData, ivData))
+                    aesProvider.Key = keyData; aesProvider.IV = ivData; aesProvider.KeySize = 128; aesProvider.BlockSize = 128; aesProvider.Mode = CipherMode.CBC; aesProvider.Padding = PaddingMode.PKCS7;
+                    using (var trans = aesProvider.CreateDecryptor(keyData, ivData))
                     {
                         res = trans.TransformFinalBlock(strData, 0, strData.Length);
                     }
                 }
-                return Convert.ToBase64String(res);
+                return res.Skip(4).ToArray();
             }
             catch (Exception e)
             {
@@ -147,52 +197,15 @@ namespace LQ.Wx.Zhang.Common
             }
 
         }
-
         public static string? AesDecrypt(string str, string? key = null, string? iv = null)
         {
-            try
-            {
-                var strData = Convert.FromBase64String(str);
-
-                if (key == null)
-                {
-                    key = aesKey;
-                }
-                if (iv == null)
-                {
-                    iv = aesIV;
-                }
-                var keyData = Encoding.ASCII.GetBytes(key);
-                var ivData = Encoding.ASCII.GetBytes(iv);
-
-                byte[]? res = null;
-
-                if (keyData.Length != 16)
-                {
-                    keyData = keyData.Take(16).ToArray();
-                    keyData = keyData.Concat(new byte[16 - keyData.Length]).ToArray();
-                }
-                if (ivData.Length != 16)
-                {
-                    ivData = ivData.Take(16).ToArray();
-                    ivData = ivData.Concat(new byte[16 - ivData.Length]).ToArray();
-                }
-                //using (var aesProvider = new AesCryptoServiceProvider { Key = keyData, IV = ivData, KeySize = 128, BlockSize = 128, Mode = CipherMode.CBC, Padding = PaddingMode.PKCS7 })
-                using (var aesProvider = Aes.Create())
-                {
-                    aesProvider.Key = keyData; aesProvider.IV=ivData;aesProvider.KeySize = 128;aesProvider.BlockSize = 128;aesProvider.Mode = CipherMode.CBC;aesProvider.Padding = PaddingMode.PKCS7;
-                    using (var trans = aesProvider.CreateDecryptor(keyData, ivData))
-                    {
-                        res = trans.TransformFinalBlock(strData, 0, strData.Length);
-                    }
-                }
-                return Encoding.UTF8.GetString(res);
-            }
-            catch (Exception e)
+            var strData = Convert.FromBase64String(str);
+            var res = AesDecrypt(strData, key, iv);
+            if (res==null)
             {
                 return null;
             }
-
+            return Encoding.UTF8.GetString(res);
         }
     }
 }

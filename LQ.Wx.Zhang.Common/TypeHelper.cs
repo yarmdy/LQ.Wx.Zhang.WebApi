@@ -26,7 +26,11 @@ namespace LQ.Wx.Zhang.Common
         }
         public static PropertyInfo[] GetProperties<T>()
         {
-            return typeof(T).GetProperties(__flags);
+            return GetProperties(typeof(T));
+        }
+        public static PropertyInfo[] GetProperties(Type type)
+        {
+            return type.GetProperties(__flags);
         }
         public static bool HasProperty<T>(string name)
         {
@@ -68,7 +72,7 @@ namespace LQ.Wx.Zhang.Common
         {
             return type.GetProperty(name, __flags);
         }
-        public static void SetPropertyValue(this object obj,string name, object value)
+        public static void SetPropertyValue(this object? obj,string name, object value)
         {
             if (obj == null)
             {

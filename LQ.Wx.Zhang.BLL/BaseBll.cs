@@ -10,6 +10,9 @@ namespace LQ.Wx.Zhang.BLL
 {
     public class BaseBll<T, PageReqT> where T : BaseEntity where PageReqT:PageReq
     {
+        protected BaseBll() {
+            Context = Common.HttpContext.Current!.RequestServices.GetRequiredService<ZhangDb>();
+        }
         #region 属性
         public int CurrentUserId => UserBll.GetCookie()?.Id ?? 0;
         public string? CurrentUserName => UserBll.GetCookie()?.Name;
@@ -19,10 +22,7 @@ namespace LQ.Wx.Zhang.BLL
         /// <summary>
         /// 上下文
         /// </summary>
-        public ZhangDb Context { get; set; }
-        public BaseBll() { 
-            Context = HttpContext.Current!.RequestServices!.GetService<ZhangDb>()!;
-        }
+        public ZhangDb Context { get; set; } = default!;
 
         public EnumDeleteFilterMode DelFilterMode { get; set; } = EnumDeleteFilterMode.Normal;
         #endregion
@@ -55,10 +55,11 @@ namespace LQ.Wx.Zhang.BLL
             if (TypeHelper.HasPropertyBase<T>("Keys"))
             {
                 var tkey = req.keyword.Replace("|", "");
+                tkey = $"|{tkey}|";
                 where = where.Or(PredicateBuilder.DotExpression<T, string>("Keys").Like(tkey));
 
             }
-            where = where.Or(a => a.CreateUser.Name.Contains(req.keyword));
+            where = where.Or(a => a.CreateUser!.Name.Contains(req.keyword));
             return where;
         }
         /// <summary>
@@ -75,7 +76,7 @@ namespace LQ.Wx.Zhang.BLL
                 {
                     if (!TypeHelper.HasProperty<T>(where.Key))
                     {
-                        query = PageOrderCustom(req, query);
+                        query = PageWhereCustom(req, query, where);
                         continue;
                     }
                     query = query.EqualTo(where.Key, where.Value);
@@ -83,7 +84,7 @@ namespace LQ.Wx.Zhang.BLL
             }
             return query;
         }
-        public virtual IQueryable<T> PageWhereCustom(PageReqT req, IQueryable<T> query)
+        public virtual IQueryable<T> PageWhereCustom(PageReqT req, IQueryable<T> query, KeyValuePair<string, string> where)
         {
             return query;
         }
@@ -109,7 +110,7 @@ namespace LQ.Wx.Zhang.BLL
                 {
                     if (!TypeHelper.HasProperty<T>(sort.Key))
                     {
-                        query = PageOrderCustom(req, query);
+                        query = PageOrderCustom(req, query, sort);
                         continue;
                     }
                     if (sort.Value)
@@ -124,7 +125,7 @@ namespace LQ.Wx.Zhang.BLL
             }
             return DefOrderBy(req, sortQuery);
         }
-        public virtual IQueryable<T> PageOrderCustom(PageReqT req, IQueryable<T> query)
+        public virtual IQueryable<T> PageOrderCustom(PageReqT req, IQueryable<T> query, KeyValuePair<string, bool> sort)
         {
             return query;
         }
@@ -219,19 +220,15 @@ namespace LQ.Wx.Zhang.BLL
             var hasOld = false;
             if (model is IdEntity)
             {
-                if (((IdEntity)(object)model).Id != 0)
+                if ((model as IdEntity)!.Id != 0)
                 {
                     throw new ArgumentNullException("model.Id");
                 }
-                ((IdEntity)(object)model).Id = 0;
+                //(model as IdEntity)!.Id = -1;
                 Context.Set<T>().Add(model);
             }
             else
             {
-                if (values.Any(a => a.Value == null || a.Value.Equals(0)))
-                {
-                    throw new ArgumentNullException($"model.{string.Join(",", values.Keys)}");
-                }
                 var tmp = Find(false, values.Select(a => a.Value).ToArray());
                 if (tmp != null)
                 {
@@ -277,21 +274,25 @@ namespace LQ.Wx.Zhang.BLL
         #endregion
 
         #region 修改
-        public virtual bool EditValidate(out string errorMsg, T model)
+        public virtual bool ModifyValidate(out string errorMsg, T model)
         {
             errorMsg = "";
             return true;
         }
-        public virtual bool EditBefore(out string errorMsg, T model, T inModel)
+        public virtual bool ModifyBefore(out string errorMsg, T model, T inModel, T oldModel)
         {
             errorMsg = "";
             return true;
         }
-        public virtual void EditAfter(Response<T, object, object, object> res, T inModel)
+        public virtual void ModifyAfter(Response<T, object, object, object> res, T inModel, T oldModel)
         {
 
         }
-        public Response<T, object, object, object> Edit(T model)
+        public virtual Expression<Func<T, object>>? ModifyExcepts(T model)
+        {
+            return null;
+        }
+        public Response<T, object, object, object> Modify(T model)
         {
             var res = new Response<T, object, object, object>();
             var tmpModel = model;
@@ -300,7 +301,7 @@ namespace LQ.Wx.Zhang.BLL
                 throw new ArgumentNullException("model");
             }
 
-            if (!EditValidate(out string errorMsg, model))
+            if (!ModifyValidate(out string errorMsg, model))
             {
                 res.code = EnumResStatus.Fail;
                 res.msg = errorMsg;
@@ -313,6 +314,7 @@ namespace LQ.Wx.Zhang.BLL
             {
                 throw new ArgumentNullException($"model.{string.Join(",", values.Keys)}");
             }
+            var old = Find(true, values.Select(a => a.Value).ToArray())!;
             var tmp = Find(false, values.Select(a => a.Value).ToArray());
             if (tmp == null)
             {
@@ -321,14 +323,23 @@ namespace LQ.Wx.Zhang.BLL
                 return res;
             }
             //Context.Configuration.LazyLoadingEnabled = false;
-            tmp.CopyFrom(model, a => new { a.CreateTime, a.CreateUserId }, new[] { typeof(BaseEntity), typeof(ICollection<>) });
+            var expr = ModifyExcepts(model);
+            var exprList = new List<string>();
+            if (expr != null)
+            {
+                exprList.AddRange(expr.GetProperties().Select(a => a.Name));
+            }
+            exprList.AddRange(new[] { nameof(model.CreateTime), nameof(model.CreateUserId), nameof(model.ModifyTime), nameof(model.ModifyUserId), nameof(model.DelTime), nameof(model.DelUserId) });
+            if (tmp.DiffCopyExcept(model, exprList.ToArray(), new[] { typeof(BaseEntity), typeof(ICollection<>) }))
+            {
+                tmp.ModifyTime = DateTime.Now;
+                tmp.ModifyUserId = CurrentUserId;
+            }
             //Context.Configuration.LazyLoadingEnabled = true;
             model = tmp;
 
-            model.ModifyTime = DateTime.Now;
-            model.ModifyUserId = CurrentUserId;
 
-            if (!EditBefore(out errorMsg, model, tmpModel))
+            if (!ModifyBefore(out errorMsg, model, tmpModel, old))
             {
                 res.code = EnumResStatus.Fail;
                 res.msg = errorMsg;
@@ -336,13 +347,18 @@ namespace LQ.Wx.Zhang.BLL
             }
 
             var ret = Context.SaveChanges();
-            if (ret <= 0)
+            if (ret < 0)
             {
                 res.code = EnumResStatus.Fail;
                 res.msg = "修改失败";
             }
+            else if (ret == 0)
+            {
+                res.code = EnumResStatus.Fail;
+                res.msg = "没有任何修改";
+            }
             res.data = model;
-            EditAfter(res, tmpModel);
+            ModifyAfter(res, tmpModel, old);
             return res;
         }
         #endregion
@@ -356,7 +372,7 @@ namespace LQ.Wx.Zhang.BLL
                 throw new ArgumentNullException(nameof(obj));
             }
 
-            var properties = TypeHelper.GetProperties<T>();
+            var properties = TypeHelper.GetProperties(obj.GetType());
             if (properties.Length <= 0)
             {
                 res.code = EnumResStatus.Fail;
@@ -390,13 +406,13 @@ namespace LQ.Wx.Zhang.BLL
         public Response<T, object, object, object> EditProperties(int id, int? id2, EditPartsReq req)
         {
             var res = new Response<T, object, object, object>();
-            if ((req?.Properties?.Count ?? 0) <= 0 || req?.Properties==null)
+            if ((req.Properties?.Count ?? 0) <= 0)
             {
                 res.code = EnumResStatus.Fail;
                 res.msg = "未传入要修改的数据";
                 return res;
             }
-            var existsProperties = req.Properties.Where(a => TypeHelper.HasPropertyBase<T>(a.Key)).ToDictionary(a => a.Key, a => a.Value);
+            var existsProperties = req.Properties!.Where(a => TypeHelper.HasPropertyBase<T>(a.Key)).ToDictionary(a => a.Key, a => a.Value);
             if (existsProperties.Count <= 0)
             {
                 res.code = EnumResStatus.Fail;
@@ -415,11 +431,7 @@ namespace LQ.Wx.Zhang.BLL
 
             existsProperties.ForEach(a => {
                 var prop = TypeHelper.GetPropertyBase<T>(a.Key);
-                if (prop == null)
-                {
-                    throw new Exception($"未找到属性{a.Key}");
-                }
-                model.SetPropertyValue(a.Key, Convert.ChangeType(a.Value, prop.PropertyType));
+                model.SetPropertyValue(a.Key, Convert.ChangeType(a.Value, prop!.PropertyType));
             });
             var ret = Context.SaveChanges();
             if (ret <= 0)
@@ -454,11 +466,7 @@ namespace LQ.Wx.Zhang.BLL
             }
             var names = getKeyNames();
             var models = ids.Select(a => {
-                var model = (T?)Activator.CreateInstance(typeof(T));
-                if (model == null)
-                {
-                    throw new Exception($"无法创建{typeof(T).Name}的对象");
-                }
+                var model = (T)Activator.CreateInstance(typeof(T))!;
                 var i = 0;
                 names.ToList().ForEach(b => TypeHelper.SetPropertyValue(model, b, a[i++]));
                 return model;
@@ -529,7 +537,7 @@ namespace LQ.Wx.Zhang.BLL
             }
             if (order == null)
             {
-                query = DefOrderBy(null, query.OrderBy(a => 0));
+                query = DefOrderBy(null,query.OrderBy(a => 0));
             }
             else
             {
@@ -541,7 +549,7 @@ namespace LQ.Wx.Zhang.BLL
         {
             return GetListFilter(where, null, true);
         }
-        public List<T> GetListFilter(Func<IQueryable<T>, IQueryable<T>> where, Func<IQueryable<T>, IQueryable<T>>? order, bool notracking)
+        public List<T> GetListFilter(Func<IQueryable<T>, IQueryable<T>>? where, Func<IQueryable<T>, IQueryable<T>>? order, bool notracking)
         {
             var query = getListQuery(where, notracking);
 
@@ -555,7 +563,7 @@ namespace LQ.Wx.Zhang.BLL
             }
             return query.ToList();
         }
-        public T? GetFirstOrDefault(Func<IQueryable<T>, IQueryable<T>> where, bool notracking = true)
+        public T? GetFirstOrDefault(Func<IQueryable<T>, IQueryable<T>>? where, bool notracking = true)
         {
             return GetFirstOrDefault(where, null, notracking);
         }
@@ -594,7 +602,7 @@ namespace LQ.Wx.Zhang.BLL
         {
             return Find(true, keys);
         }
-        public T? Find(bool notracking, params object?[]? keys)
+        public T? Find(bool notracking, params object?[] keys)
         {
             if (keys == null) return null;
             keys = keys.Where(a => a != null).ToArray();
@@ -646,7 +654,7 @@ namespace LQ.Wx.Zhang.BLL
         {
             //var stt = (Context as IObjectContextAdapter).ObjectContext.CreateObjectSet<T>();
             var stt = Context.Model.FindEntityType(typeof(T));
-            return stt!.GetKeys().Where(a=>a.IsPrimaryKey()).Select(a => a.Properties.First().Name).ToArray()!;
+            return stt!.GetKeys().Where(a => a.IsPrimaryKey()).Select(a => a.Properties.First().Name).ToArray()!;
         }
         private Dictionary<string, object?> getKeyValues(T model)
         {
@@ -702,17 +710,13 @@ namespace LQ.Wx.Zhang.BLL
                 exprList.RemoveAt(exprList.Count - 1);
                 if (last is MemberExpression)
                 {
-                    var memExpr = ((MemberExpression)last);
+                    var memExpr = (last as MemberExpression)!;
                     path = "." + memExpr.Member.Name + path;
-                    if (memExpr.Expression == null)
-                    {
-                        throw new Exception("属性表达式未找到子表达式");
-                    }
-                    exprList.Add(memExpr.Expression);
+                    exprList.Add(memExpr.Expression!);
                 }
                 else
                 {
-                    var children = last.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.GetProperty).Where(a => a.PropertyType.IsAssignableFrom(typeof(Expression))).OrderBy(a => a.PropertyType.IsAssignableFrom(typeof(MemberExpression)) ? 1 : 0).Select(a => (Expression)a.GetValue(last)).ToList();
+                    var children = last.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.GetProperty).Where(a => a.PropertyType.IsAssignableFrom(typeof(Expression))).OrderBy(a => a.PropertyType.IsAssignableFrom(typeof(MemberExpression)) ? 1 : 0).Select(a => (Expression)a.GetValue(last)!).ToList();
                     exprList.AddRange(children);
                 }
 

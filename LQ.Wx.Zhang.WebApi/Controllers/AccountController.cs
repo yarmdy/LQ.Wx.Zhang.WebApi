@@ -9,24 +9,17 @@ namespace LQ.Wx.Zhang.WebApi.Controllers
 {
     [ApiController,Authorize]
     [Route("[controller]")]
-    public class AccountController : ControllerBase
+    public class AccountController : BaseController<User,UserReq.Page>
     {
-        public ItemBll ItemBll { get; set; }
-        public UserBll UserBll { get; set; }
 
-        private readonly ILogger<AccountController> _logger;
+        public override BaseBll<User, UserReq.Page> Bll => UserBll;
 
-        public AccountController(ILogger<AccountController> logger):base()
-        {
-            _logger = logger;
-            ItemBll = Common.HttpContext.Current.RequestServices.GetService<ItemBll>();
-            UserBll = Common.HttpContext.Current.RequestServices.GetService<UserBll>();
-        }
         [AllowAnonymous]
         [HttpGet("Login")]
         public object Login()
         {
-            return new{code=0,msg="ÄúÃ»ÓÐµÇÂ¼" };
+            var res = new Response();
+            res.code = EnumResStatus.NoLogin; return res;
         }
         [AllowAnonymous]
         [HttpPost("Login")]
@@ -39,14 +32,18 @@ namespace LQ.Wx.Zhang.WebApi.Controllers
         [HttpPost("GetCookie")]
         public async Task<object> Login3(string userName, string password)
         {
+            var res = new Response<string>();
+
             var claims = new List<Claim>() {
                 new Claim("UserName", userName),
                 new Claim("Password", password)
             };
             await HttpContext.SignInAsync(new ClaimsPrincipal(new ClaimsIdentity(claims, "cookie", "UserName", "role")));
 
-            
-            return new { userName, password };
+            var cookie = Response.Headers["Set-Cookie"];
+            var cookiestr = new System.Text.RegularExpressions.Regex(@"sa=(.+?)\;").Match(cookie!).Groups[1].Value;
+            res.data = cookiestr;
+            return res;
         }
     }
 }
