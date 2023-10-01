@@ -8,7 +8,7 @@ namespace LQ.Wx.Zhang.BLL
         #region 当前状态
         public static User? GetCookie()
         {
-            var arr = (HttpContext.Current?.User?.Identity?.Name + "").Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+            var arr = (HttpContext.Current?.User?.Identity?.Name + "").Split(new[] { '|' }, StringSplitOptions.None);
             if (arr == null || arr.Length < 3)
             {
                 return null;

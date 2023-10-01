@@ -47,6 +47,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.Use(async (context, next) => { 
+    await next(context);
+});
 app.UseExceptionHandler(a => { 
     
 });

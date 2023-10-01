@@ -11,7 +11,7 @@ namespace LQ.Wx.Zhang.BLL
     public class BaseBll<T, PageReqT> where T : BaseEntity where PageReqT:PageReq
     {
         protected BaseBll() {
-            Context = Common.HttpContext.Current!.RequestServices.GetRequiredService<ZhangDb>();
+            Context = Common.HttpContext.Current!.RequestServices.GetRequiredService<ZhangSubDb>();
         }
         #region 属性
         public int CurrentUserId => UserBll.GetCookie()?.Id ?? 0;
@@ -22,7 +22,7 @@ namespace LQ.Wx.Zhang.BLL
         /// <summary>
         /// 上下文
         /// </summary>
-        public ZhangDb Context { get; set; } = default!;
+        public ZhangSubDb Context { get; set; } = default!;
 
         public EnumDeleteFilterMode DelFilterMode { get; set; } = EnumDeleteFilterMode.Normal;
         #endregion
@@ -735,6 +735,8 @@ namespace LQ.Wx.Zhang.BLL
         public static IServiceCollection AddBll(this IServiceCollection services)
         {
             services.AddScoped<ZhangDb>();
+            services.AddScoped<CoreBll>();
+            services.AddScoped<ZhangSubDb>();
             Assembly.GetExecutingAssembly().GetTypes().Where(a=>a.BaseType!=null && a.BaseType.IsGenericType && a.BaseType.GetGenericTypeDefinition()==typeof(BaseBll<,>)).ToList().ForEach(a => {
                 services.AddScoped(a);
             });
