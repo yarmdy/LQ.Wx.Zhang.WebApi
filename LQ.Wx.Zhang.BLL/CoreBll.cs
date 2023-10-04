@@ -40,6 +40,15 @@ namespace LQ.Wx.Zhang.BLL
             }
             user.CopyFrom(wxuser);
             Context.SaveChanges();
+            var db = new ZhangSubDb(user.OpenId);
+            var subuser = db.Users.Find(user.Id);
+            if (subuser==null)
+            {
+                subuser = user;
+                db.Users.Add(subuser);
+            }
+            subuser.CopyFrom(user);
+            db.SaveChanges();
             return user;
         }
         #region 依赖

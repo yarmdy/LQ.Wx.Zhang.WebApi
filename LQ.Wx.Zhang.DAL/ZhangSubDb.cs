@@ -7,13 +7,25 @@ namespace LQ.Wx.Zhang.DAL
     public class ZhangSubDb: DbContext
     {
         private static ILoggerFactory loggerFactory = LoggerFactory.Create(b=>b.AddDebug());
+        private string? _openid;
         public ZhangSubDb()
         {
             var name = HttpContext.Current?.User?.Identity?.Name;
+            
             if (string.IsNullOrEmpty(name))
             {
                 return;
             }
+            _openid = name.Split("|")[1];
+            this.Database.EnsureCreated();
+        }
+        public ZhangSubDb(string openid)
+        {
+            if (string.IsNullOrEmpty(openid))
+            {
+                return;
+            }
+            _openid = openid;
             this.Database.EnsureCreated();
         }
 
@@ -23,12 +35,7 @@ namespace LQ.Wx.Zhang.DAL
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             base.OnConfiguring(optionsBuilder);
-            var name = HttpContext.Current?.User?.Identity?.Name;
-            if (string.IsNullOrEmpty(name))
-            {
-                return;
-            }
-            var openid = name.Split("|")[1];
+            var openid = _openid;
             if (!Directory.Exists(@$"db\sub\{openid}"))
             {
                 Directory.CreateDirectory(@$"db\sub\{openid}");

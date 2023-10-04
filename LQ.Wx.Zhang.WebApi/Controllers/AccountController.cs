@@ -34,7 +34,7 @@ namespace LQ.Wx.Zhang.WebApi.Controllers
         [HttpPost("GetCookie"), AllowAnonymous]
         public async Task<object> Login3(string code)
         {
-            var res = new Response();
+            var res = new Response<User,object>();
             var httpres = WxApi.Jscode2session(code);
             var openId = (string)httpres.openid;
             var sessionKey = (string)httpres.session_key;
@@ -48,18 +48,55 @@ namespace LQ.Wx.Zhang.WebApi.Controllers
                 res.code = EnumResStatus.NoPermissions;
                 return res;
             }
+            string cookiestr = await setCookie(user);
+            res.data = user;
+            res.data2 = new { cookie=cookiestr};
+            return res;
+        }
+        [HttpPost("CreateUser"), AllowAnonymous]
+        public async Task<object> Login4(string code,WxUserInfo model)
+        {
+            var res = new Response<User,object>();
+            if (model == null || model.UserInfo == null)
+            {
+                res.code = EnumResStatus.Fail;
+                return res;
+            }
+            var httpres = WxApi.Jscode2session(code);
+            var openId = (string)httpres.openid;
+            var sessionKey = (string)httpres.session_key;
+            if (string.IsNullOrEmpty(openId))
+            {
+                res.code = EnumResStatus.Fail;
+                return res;
+            }
+            var user = Bll.GetUser(openId, sessionKey, true);
+            if (user == null)
+            {
+                res.code = EnumResStatus.NoPermissions;
+                return res;
+            }
+            user = Bll.SetUserInfo(user.Id, model.UserInfo)!;
+            string cookiestr = await setCookie(user);
+            res.data = user;
+            res.data2 = new { cookie = cookiestr };
+            return res;
+        }
+
+        private async Task<string> setCookie(User user)
+        {
             var claims = new List<Claim>() {
                 new Claim("UserName", $"{user.Id}|{user.OpenId}|{user.NickName}"),
                 new Claim("Role", "user"),
             };
-            
+
             await HttpContext.SignInAsync(new ClaimsPrincipal(new ClaimsIdentity(claims, "cookie", "UserName", "Role")));
 
             var cookie = Response.Headers["Set-Cookie"];
-            var cookiestr = new System.Text.RegularExpressions.Regex(@"sa=(.+?)\;").Match(cookie!).Groups[1].Value;
-            res.data = new { wx = JDynamicObject.ToJsonObj(httpres), cookie = cookiestr };
-            return res;
+            var cookiestr = new System.Text.RegularExpressions.Regex(@"(sa=.+?)\;").Match(cookie!).Groups[1].Value;
+            return cookiestr;
         }
+
         [HttpPost("SetUserInfo"),Authorize]
         public object SetUserInfo(WxUserInfo model) {
             var res = new Response();
