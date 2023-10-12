@@ -40,7 +40,7 @@ namespace LQ.Wx.Zhang.Common
         }
         public static Expression<Func<T, bool>> Like<T>(this Expression<Func<T, string>> expr, string val)
         {
-            var method = typeof(string).GetMethod("Contains")!;
+            var method = typeof(string).GetMethod("Contains", new[] { typeof(string)})!;
             return Expression.Lambda<Func<T, bool>>(Expression.Call(expr.Body, method, Expression.Constant(val)), expr.Parameters);
         }
 

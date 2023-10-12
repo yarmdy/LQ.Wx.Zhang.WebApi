@@ -157,17 +157,17 @@ namespace LQ.Wx.Zhang.BLL
         #endregion
 
         #region 获取详情页数据
-        public virtual bool DetailBefore(int id, int? id2, Response<T, object, object, object> res)
+        public virtual bool DetailBefore(int id, int? id2, Response<T?, object, object, object> res)
         {
             return true;
         }
-        public virtual void DetailAfter(int id, int? id2, Response<T, object, object, object> res)
+        public virtual void DetailAfter(int id, int? id2, Response<T?, object, object, object> res)
         {
 
         }
-        public Response<T, object, object, object> GetDetail(int id, int? id2)
+        public Response<T?, object, object, object> GetDetail(int id, int? id2)
         {
-            var res = new Response<T, object, object, object>();
+            var res = new Response<T?, object, object, object>();
 
             var beforeRes = DetailBefore(id, id2, res);
             if (!beforeRes)
@@ -198,13 +198,13 @@ namespace LQ.Wx.Zhang.BLL
             errorMsg = "";
             return true;
         }
-        public virtual void AddAfter(Response<T, object, object, object> res, T inModel)
+        public virtual void AddAfter(Response<T?, object, object, object> res, T inModel)
         {
 
         }
-        public Response<T, object, object, object> Add(T model)
+        public Response<T?, object, object, object> Add(T model)
         {
-            var res = new Response<T, object, object, object>();
+            var res = new Response<T?, object, object, object>();
             var tmpModel = model;
             if (model == null)
             {
@@ -284,7 +284,7 @@ namespace LQ.Wx.Zhang.BLL
             errorMsg = "";
             return true;
         }
-        public virtual void ModifyAfter(Response<T, object, object, object> res, T inModel, T oldModel)
+        public virtual void ModifyAfter(Response<T?, object, object, object> res, T inModel, T oldModel)
         {
 
         }
@@ -292,9 +292,9 @@ namespace LQ.Wx.Zhang.BLL
         {
             return null;
         }
-        public Response<T, object, object, object> Modify(T model)
+        public Response<T?, object, object, object> Modify(T model)
         {
-            var res = new Response<T, object, object, object>();
+            var res = new Response<T?, object, object, object>();
             var tmpModel = model;
             if (model == null)
             {

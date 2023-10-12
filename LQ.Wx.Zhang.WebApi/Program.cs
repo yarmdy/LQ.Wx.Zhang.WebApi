@@ -53,7 +53,7 @@ app.Use(async (context, next) => {
 app.UseExceptionHandler(a => { 
     
 });
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
