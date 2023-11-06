@@ -63,16 +63,16 @@ namespace LQ.Wx.Zhang.DAL
                 a.HasOne(b=>b.ItemClass).WithMany(b=>b.Items).HasForeignKey(b=>b.ClassId);
             });
             modelBuilder.Entity<Stock>(a => {
-                a.HasOne(b => b.CreateUser).WithMany().HasForeignKey(b => b.CreateUserId).IsRequired(false);
+                a.HasOne(b => b.CreateUser).WithMany().HasForeignKey(b => b.CreateUserId).IsRequired();
                 a.HasOne(b => b.ModifyUser).WithMany().HasForeignKey(b => b.ModifyUserId);
                 a.HasOne(b => b.DelUser).WithMany().HasForeignKey(b => b.DelUserId);
-                a.HasOne(b => b.Item).WithMany().HasForeignKey(b => b.ItemId);
+                a.HasOne(b => b.Item).WithMany().HasForeignKey(b => b.ItemId).IsRequired();
             });
             modelBuilder.Entity<StockDetail>(a => {
-                a.HasOne(b => b.CreateUser).WithMany().HasForeignKey(b => b.CreateUserId).IsRequired(false);
+                a.HasOne(b => b.CreateUser).WithMany().HasForeignKey(b => b.CreateUserId).IsRequired();
                 a.HasOne(b => b.ModifyUser).WithMany().HasForeignKey(b => b.ModifyUserId);
                 a.HasOne(b => b.DelUser).WithMany().HasForeignKey(b => b.DelUserId);
-                a.HasOne(b => b.Item).WithMany().HasForeignKey(b => b.ItemId);
+                a.HasOne(b => b.Item).WithMany().HasForeignKey(b => b.ItemId).IsRequired();
                 a.HasOne(b => b.BeginData).WithOne(b => b.StockDetail).HasForeignKey<StockDetail>(b => b.BeginId);
                 a.HasOne(b => b.Order).WithMany().HasForeignKey(b => b.OrderId);
                 a.HasOne(b => b.OrderDetail).WithOne(b => b.StockDetail).HasForeignKey<StockDetail>(b=>b.OrderDetailId);
@@ -86,14 +86,14 @@ namespace LQ.Wx.Zhang.DAL
                 a.HasOne(b => b.CreateUser).WithMany().HasForeignKey(b => b.CreateUserId).IsRequired();
                 a.HasOne(b => b.ModifyUser).WithMany().HasForeignKey(b => b.ModifyUserId);
                 a.HasOne(b => b.DelUser).WithMany().HasForeignKey(b => b.DelUserId);
-                a.HasOne(b => b.Client).WithMany(b=>b.Orders).HasForeignKey(b => b.ClientId);
+                a.HasOne(b => b.Client).WithMany(b=>b.Orders).HasForeignKey(b => b.ClientId).IsRequired();
             });
             modelBuilder.Entity<InOutOrderDetail>(a => {
                 a.HasOne(b => b.CreateUser).WithMany().HasForeignKey(b => b.CreateUserId).IsRequired();
                 a.HasOne(b => b.ModifyUser).WithMany().HasForeignKey(b => b.ModifyUserId);
                 a.HasOne(b => b.DelUser).WithMany().HasForeignKey(b => b.DelUserId);
-                a.HasOne(b => b.inOutOrder).WithMany().HasForeignKey(b=>b.OrderId);
-                a.HasOne(b => b.Item).WithMany().HasForeignKey(b => b.ItemId);
+                a.HasOne(b => b.inOutOrder).WithMany().HasForeignKey(b=>b.OrderId).IsRequired();
+                a.HasOne(b => b.Item).WithMany().HasForeignKey(b => b.ItemId).IsRequired();
             });
             modelBuilder.Entity<User>(a => {
                 a.Property(a=>a.CreateUserId).IsRequired(false);
