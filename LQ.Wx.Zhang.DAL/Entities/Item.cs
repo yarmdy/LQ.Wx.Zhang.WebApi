@@ -14,5 +14,7 @@ namespace LQ.Wx.Zhang.DAL
         public decimal Price { get; set; }
         public decimal Cost { get; set; }
         public virtual Attachment? Image { get; set; }
+        public int ClassId { get; set; }
+        public virtual ItemClass? ItemClass { get; set; }
     }
 }

@@ -14,7 +14,6 @@ namespace LQ.Wx.Zhang.DAL
         public string Ext { get; set; } = string.Empty;
         public string FileName { get; set; } = string.Empty;
         public int ModuleType { get; set; }
-        public virtual ICollection<Item>? Items { get; set; }
         [NotMapped]
         public string FullName => Name + Path + Ext;
     }
