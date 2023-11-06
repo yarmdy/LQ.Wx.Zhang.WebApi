@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace LQ.Wx.Zhang.DAL
 {
-    public class BeginData
+    public class BeginData:IdEntity
     {
         public int ItemId { get; set; }
         public virtual Item? Item { get; set; }
